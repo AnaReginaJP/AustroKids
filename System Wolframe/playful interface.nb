@@ -1,1 +1,1951 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     87249,       1943]
+NotebookOptionsPosition[     83813,       1887]
+NotebookOutlinePosition[     84229,       1903]
+CellTagsIndexPosition[     84186,       1900]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[StyleBox["Austrokids: The Solar System Built for Kids  ",
+ FontWeight->"Bold",
+ FontVariations->{"Underline"->True},
+ FontColor->RGBColor[0.5019607843137255, 0., 0.]]], "Text",
+ CellFrame->{{0, 0}, {0, 0}},
+ CellChangeTimes->{{3.9729156614228134`*^9, 3.972915665342451*^9}, {
+  3.97291578797484*^9, 
+  3.9729158209046516`*^9}},ExpressionUUID->"583bf816-0f38-fb49-9fbc-\
+28596e0dd969"],
+
+Cell[TextData[StyleBox["General Overview\nProject Mission This project \
+introduces \[OpenCurlyDoubleQuote]The Solar System Built for Kids,\
+\[CloseCurlyDoubleQuote] an interactive game designed to teach the wonders of \
+the universe in a fun, anti-boredom format. We move away from traditional \
+explanations, using animations, colors, and motion to capture students\
+\[CloseCurlyQuote] attention as they explore a space-inspired environment.\n\
+Visuals & Mechanics\n    Friendly Design: The system renders a starry \
+background and a cartoon-style Jupiter, making the planet look approachable \
+and attractive to children.\n    Interactive Physics: Players click to launch \
+projectiles, allowing them to visually observe trajectories, distances, and \
+movement effects in real-time.\n    Simulation Feedback: Every impact reduces \
+the planet\[CloseCurlyQuote]s \[OpenCurlyDoubleQuote]health,\
+\[CloseCurlyDoubleQuote] demonstrating how actions have specific consequences \
+within a simulated system.\nEducational Impact By combining interactivity, \
+visualization, and scientific curiosity, the game makes learning about space \
+intuitive and exciting. It serves as a simple yet effective tool to introduce \
+fundamental concepts of physics, motion, and astronomy through the power of \
+play.\n\nPhase 1: \nWhat it is: An Association that stores static values per \
+planet: \[OpenCurlyDoubleQuote]Radius\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]OrbitalDistance\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]OrbitalPeriod\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Color\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Symbol\[CloseCurlyDoubleQuote].\nPurpose: Single \
+source of truth for calculations and visualization. Change here to update \
+everything.\nPractical note: Distances are in millions of km and radii in km; \
+you can add \[OpenCurlyDoubleQuote]Mass\[CloseCurlyDoubleQuote], \
+\[OpenCurlyDoubleQuote]Inclination\[CloseCurlyDoubleQuote] or normalize units \
+if desired.\nCalculateOrbitPosition\nInput: planetName, time (days), and \
+orbitMultiplier (visual scale).\nProcess: Takes OrbitalDistance and \
+OrbitalPeriod from PlanetOrbitData, calculates the orbital angle\nangle = 2\
+\[Pi] * Mod[time, period] / period (prevents infinite growth with Mod) and \
+returns {x,y,z} = {D cos\[Theta], D sin\[Theta], 0}.\nResult: 2D position in \
+the XY plane; z=0 (no inclination). For inclined orbits, the position would \
+need to be rotated.\nMain 3D Drawing (ShowPlanetOrbit3D) - General Structure\n\
+Takes planet data and the orbitMultiplier. Calculates orbitDistance and \
+planetPosition using the previous function.\nscaledSize controls the visual \
+size of planets and objects (separate from the actual Radius).\nScene Details \
+in ShowPlanetOrbit3D\nStarfield background: Generate 100 small Spheres with \
+RandomReal to simulate stars (better to generate once outside for \
+reproducibility).\nOrbit: Creates a parametric Tube around the Sun with \
+radius orbitDistance.\nSun: Yellow Sphere at {0,0,0} with Specularity.\n\
+Planet: Sphere at planetPosition with color taken from planetData[\
+\[OpenCurlyDoubleQuote]Color\[CloseCurlyDoubleQuote]].\nDecorations (happy \
+face): Two eyes and a mouth built with Sphere and Tube, positioned with \
+relative offsets to scaledSize.\nConditional rocket: If[showRocket, ...] \
+draws Cone/Cylinder/Sphere around the planet when showRocket is True.\n\
+Labels: Planet name and symbol, \[OpenCurlyDoubleQuote]Days: ...\
+\[CloseCurlyDoubleQuote] text, and Sun label.\nRender options: ImageSize, \
+PlotRange (use orbitDistance to adjust), Lighting, ViewPoint, Background, \
+SphericalRegion.\nInformation Panel (DisplayPlanetInfo)\nExtracts planetData, \
+calculates relativeSize = Round[Radius/6371] for comparison with Earth.\n\
+Displays a Panel with: name+symbol, distance to the Sun (multiplied by \
+orbitMultiplier), period in days, relative size, and a \
+\[OpenCurlyDoubleQuote]fun fact\[CloseCurlyDoubleQuote] depending on the \
+planet.\nUseful for teaching data while viewing the animation.\nMain \
+Interface (CreatePlanetSelector3D) - State and Controls\nUses DynamicModule \
+with variables: selectedPlanet, orbitTime, animationRunning, animationSpeed, \
+viewPoint, orbitMultiplier, showRocket.\nIncluded controls:\nPopupMenu to \
+select planet (shows emoji).\nSliders for animationSpeed and orbitMultiplier.\
+\nButtons: launch rocket, pause, resume, reset (resets orbitTime, \
+orbitMultiplier, showRocket).\nView buttons: change viewPoint to predefined \
+positions.\nDynamics: Inside the main Dynamic, if animationRunning is True \
+then orbitTime += animationSpeed and the scene is redrawn with \
+ShowPlanetOrbit3D and DisplayPlanetInfo.\nTip: Use Mod in the position \
+calculation (already in CalculateOrbitPosition) to prevent orbitTime from \
+growing without limit.\nStartup Messages\nSimple Print messages to notify: \
+system started, brief instructions.\n\nPhase 2: \n\n1. Global Variable \
+Declaration We initialize three key variables to manage the game state:\n    \
+projectiles \[RightArrow] A list that stores all active shots.\n    \
+jupiterHealth \[RightArrow] Jupiter\[CloseCurlyQuote]s health counter (starts \
+at 100).\n    gameRunning \[RightArrow] A boolean to control if the game is \
+active or paused.\n2. Projectile Launch Function The LaunchProjectile \
+function handles the input:\n    It detects the mouse position upon clicking.\
+\n    It generates a projectile with specific attributes: initial position, \
+velocity vector (aimed at the center), radius, and color.\n    It appends \
+this new object to the projectiles list.\n3. Projectile Updates (The Physics \
+Engine) The UpdateProjectiles function is the heartbeat of the movement:\n    \
+Iterates through every projectile in the list.\n    Calculates the new \
+position based on velocity.\n    Collision Detection:\n        Impact: If \
+distance to center < 2, Jupiter takes 5 damage.\n        Bounds: Checks if \
+the projectile is still within the game area (distance < 25).\n    Cleanup: \
+Removes projectiles that hit the target or flew off-map to save memory.\n4. \
+Main Game Engine: JupiterGame[] This function renders the visuals and ties \
+physics to graphics:\n    Logic: Updates projectiles only if gameRunning is \
+true and triggers \[OpenCurlyDoubleQuote]Game Over\[CloseCurlyDoubleQuote] if \
+health hits 0.\n    Graphics: Renders the Space Background, Stars, Jupiter \
+(with a face), and Health Text.\n    Interaction: Uses EventHandler to detect \
+clicks and trigger the launch function.\n5. Minimalist Interface CreateGame[] \
+assembles the user experience (UX):\n    Displays a Control Panel with \
+instructions.\n    Includes a Reset Button to restore variables and restart.\n\
+    Uses Dynamic to ensure the animation updates in real-time without lag.\n\n\
+6. Game Initialization Finally, the script prints a console message and \
+executes CreateGame[] to launch the full interface.",
+ FontFamily->"Arial",
+ FontSize->10]], "Text",
+ CellChangeTimes->{{3.9729156614228134`*^9, 3.972915665342451*^9}, {
+  3.97291578797484*^9, 3.9729158225748234`*^9}, {3.9729186170836544`*^9, 
+  3.9729186629262886`*^9}, {3.9729188602984047`*^9, 3.9729188948901463`*^9}, {
+  3.9729191319408627`*^9, 
+  3.972919183838009*^9}},ExpressionUUID->"9fe7fb93-6366-a640-a0bd-\
+c026cba2fc8a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"===", 
+    RowBox[{
+    "SISTEMA", " ", "SOLAR", " ", "INTERACTIVO", " ", "3", "D", " ", 
+     "ESF\[CapitalEAcute]RICO"}], "==="}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", 
+     RowBox[{"ShowPlanetOrbit3D", ",", "CreatePlanetSelector3D"}], "]"}], 
+    ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"-", "Datos"}]}], " ", "planetarios", " ", "como", " ", 
+      RowBox[{"Association", "--"}]}], "-"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"PlanetOrbitData", "=", 
+     RowBox[{"<|", 
+      RowBox[{
+       RowBox[{"\"\<Mercury\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "2439.7"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "57.9"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "87.97"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.75", ",", "0.7", ",", "0.65"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f7e4\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Venus\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "6051.8"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "108.2"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "224.7"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.95", ",", "0.8", ",", "0.4"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f7e0\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Earth\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "6371"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "149.6"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "365.256"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.2", ",", "0.5", ",", "0.9"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f30d\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Mars\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "3389.5"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "227.9"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "686.98"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.85", ",", "0.35", ",", "0.2"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f534\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Jupiter\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "69911"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "778.5"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "4332.82"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.85", ",", "0.7", ",", "0.55"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f7e1\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Saturn\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "58232"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "1432.0"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "10759.2"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.95", ",", "0.85", ",", "0.6"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01fa90\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Uranus\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "25362"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "2867.0"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "30688.5"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.6", ",", "0.85", ",", "0.95"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f535\>\""}]}], "|>"}]}], ",", 
+       RowBox[{"\"\<Neptune\>\"", "->", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Radius\>\"", "->", "24622"}], ",", 
+          RowBox[{"\"\<OrbitalDistance\>\"", "->", "4515.0"}], ",", 
+          RowBox[{"\"\<OrbitalPeriod\>\"", "->", "60182"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.2", ",", "0.4", ",", "0.8"}], "]"}]}], ",", 
+          RowBox[{"\"\<Symbol\>\"", "->", "\"\<\|01f7e4\>\""}]}], "|>"}]}]}], 
+      "|>"}]}], ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"-", "Funci\[OAcute]n"}]}], " ", "para", " ", "calcular", " ", 
+      "posici\[OAcute]n", " ", 
+      RowBox[{"orbital", "--"}]}], "-"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"CalculateOrbitPosition", "[", 
+      RowBox[{"planetName_", ",", "time_", ",", "orbitMultiplier_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"planetData", ",", "distance", ",", "period", ",", "angle"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"planetData", "=", 
+         RowBox[{"PlanetOrbitData", "[", "planetName", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"distance", "=", 
+         RowBox[{
+          RowBox[{"planetData", "[", "\"\<OrbitalDistance\>\"", "]"}], "*", 
+          "orbitMultiplier"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"period", "=", 
+         RowBox[{"planetData", "[", "\"\<OrbitalPeriod\>\"", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"angle", "=", 
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{"2", " ", "Pi", "*", 
+            RowBox[{"Mod", "[", 
+             RowBox[{"time", ",", "period"}], "]"}]}], ")"}], "/", 
+          "period"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"distance", "*", 
+           RowBox[{"Cos", "[", "angle", "]"}]}], ",", 
+          RowBox[{"distance", "*", 
+           RowBox[{"Sin", "[", "angle", "]"}]}], ",", "0"}], "}"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"-", "Funci\[OAcute]n"}]}], " ", "principal", " ", 
+      RowBox[{"simplificada", "--"}]}], "-"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"ShowPlanetOrbit3D", "[", 
+      RowBox[{
+      "planetName_", ",", "time_", ",", "orbitMultiplier_", ",", 
+       "showRocket_", ",", "viewPoint_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "planetData", ",", "orbitDistance", ",", "planetPosition", ",", 
+         "scaledSize"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"planetData", "=", 
+         RowBox[{"PlanetOrbitData", "[", "planetName", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"orbitDistance", "=", 
+         RowBox[{
+          RowBox[{"planetData", "[", "\"\<OrbitalDistance\>\"", "]"}], "*", 
+          "orbitMultiplier"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"planetPosition", "=", 
+         RowBox[{"CalculateOrbitPosition", "[", 
+          RowBox[{"planetName", ",", "time", ",", "orbitMultiplier"}], 
+          "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"scaledSize", "=", "0.3"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Graphics3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"(*", 
+            RowBox[{"Fondo", " ", "estrellado"}], "*)"}], 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"Black", ",", 
+              RowBox[{"Opacity", "[", "1", "]"}]}], "}"}], ",", 
+            RowBox[{"Table", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"White", ",", 
+                RowBox[{"Opacity", "[", "0.5", "]"}], ",", 
+                RowBox[{"Sphere", "[", 
+                 RowBox[{
+                  RowBox[{"RandomReal", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "500"}], ",", "500"}], "}"}], ",", "3"}], 
+                   "]"}], ",", "0.1"}], "]"}]}], "}"}], ",", 
+              RowBox[{"{", "100", "}"}]}], "]"}], ",", 
+            RowBox[{"(*", "\[CapitalOAcute]rbita", "*)"}], 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"RGBColor", "[", 
+               RowBox[{"0.3", ",", "0.7", ",", "1"}], "]"}], ",", 
+              RowBox[{"Opacity", "[", "0.3", "]"}], ",", 
+              RowBox[{"Tube", "[", 
+               RowBox[{
+                RowBox[{"Table", "[", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"orbitDistance", "*", 
+                    RowBox[{"Cos", "[", "t", "]"}]}], ",", 
+                    RowBox[{"orbitDistance", "*", 
+                    RowBox[{"Sin", "[", "t", "]"}]}], ",", "0"}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"t", ",", "0", ",", 
+                    RowBox[{"2", " ", "Pi"}], ",", "0.1"}], "}"}]}], "]"}], ",", 
+                RowBox[{"orbitDistance", "*", "0.01"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"(*", "Sol", "*)"}], 
+            RowBox[{"{", 
+             RowBox[{"Yellow", ",", 
+              RowBox[{"Specularity", "[", 
+               RowBox[{"White", ",", "20"}], "]"}], ",", 
+              RowBox[{"Sphere", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",", 
+                RowBox[{"scaledSize", "*", "3"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"Orange", ",", 
+              RowBox[{"Opacity", "[", "0.3", "]"}], ",", 
+              RowBox[{"Sphere", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",", 
+                RowBox[{"scaledSize", "*", "5"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{"Planeta", " ", "principal"}], "*)"}], 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"planetData", "[", "\"\<Color\>\"", "]"}], ",", 
+              RowBox[{"Specularity", "[", 
+               RowBox[{"White", ",", "10"}], "]"}], ",", 
+              RowBox[{"Sphere", "[", 
+               RowBox[{"planetPosition", ",", 
+                RowBox[{"scaledSize", "*", "2"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Cara", " ", "feliz", " ", "en", " ", "el", " ", "planeta"}], 
+             "*)"}], 
+            RowBox[{"{", 
+             RowBox[{"Black", ",", 
+              RowBox[{"Sphere", "[", 
+               RowBox[{
+                RowBox[{"planetPosition", "+", 
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"scaledSize", "*", "0.3"}], ",", 
+                   RowBox[{"scaledSize", "*", "0.3"}], ",", 
+                   RowBox[{"scaledSize", "*", "0.8"}]}], "}"}]}], ",", 
+                RowBox[{"scaledSize", "*", "0.15"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"Black", ",", 
+              RowBox[{"Sphere", "[", 
+               RowBox[{
+                RowBox[{"planetPosition", "+", 
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"scaledSize", "*", 
+                    RowBox[{"-", "0.3"}]}], ",", 
+                   RowBox[{"scaledSize", "*", "0.3"}], ",", 
+                   RowBox[{"scaledSize", "*", "0.8"}]}], "}"}]}], ",", 
+                RowBox[{"scaledSize", "*", "0.15"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"Black", ",", 
+              RowBox[{"Tube", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "-", 
+                    RowBox[{"scaledSize", "*", "0.4"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "+", 
+                    RowBox[{"scaledSize", "*", "0.3"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "3", "]"}], "]"}], "+", 
+                    RowBox[{"scaledSize", "*", "0.3"}]}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "+", 
+                    RowBox[{"scaledSize", "*", "0.4"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "+", 
+                    RowBox[{"scaledSize", "*", "0.3"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "[", 
+                    RowBox[{"[", "3", "]"}], "]"}], "+", 
+                    RowBox[{"scaledSize", "*", "0.3"}]}]}], "}"}]}], "}"}], ",", 
+                RowBox[{"scaledSize", "*", "0.08"}]}], "]"}]}], "}"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Cohete", " ", "si", " ", "est\[AAcute]", " ", "activo"}], 
+             "*)"}], 
+            RowBox[{"If", "[", 
+             RowBox[{"showRocket", ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"RGBColor", "[", 
+                   RowBox[{"0.8", ",", "0.8", ",", "1"}], "]"}], ",", 
+                  RowBox[{"Cone", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "3"}]}], "}"}]}], ",", 
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "5"}]}], "}"}]}]}], "}"}], ",", 
+                    RowBox[{"scaledSize", "*", "0.5"}]}], "]"}]}], "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"RGBColor", "[", 
+                   RowBox[{"1", ",", "0.5", ",", "0.5"}], "]"}], ",", 
+                  RowBox[{"Cylinder", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"-", "scaledSize"}], "*", "0.8"}], ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "4"}]}], "}"}]}], ",", 
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"scaledSize", "*", "0.8"}], ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "4"}]}], "}"}]}]}], "}"}], ",", 
+                    RowBox[{"scaledSize", "*", "0.2"}]}], "]"}]}], "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"Yellow", ",", 
+                  RowBox[{"Opacity", "[", "0.8", "]"}], ",", 
+                  RowBox[{"Cylinder", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "2.5"}]}], "}"}]}], ",", 
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "1"}]}], "}"}]}]}], "}"}], ",", 
+                    RowBox[{"scaledSize", "*", "0.1"}]}], "]"}]}], "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"Red", ",", 
+                  RowBox[{"Sphere", "[", 
+                   RowBox[{
+                    RowBox[{"planetPosition", "+", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", 
+                    RowBox[{"scaledSize", "*", "4.8"}]}], "}"}]}], ",", 
+                    RowBox[{"scaledSize", "*", "0.2"}]}], "]"}]}], "}"}]}], 
+               "}"}], ",", 
+              RowBox[{"{", "}"}]}], "]"}], ",", 
+            RowBox[{"(*", "Etiquetas", "*)"}], 
+            RowBox[{"Text", "[", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               
+               RowBox[{"\"\<\:2728 SOL \:2728\>\"", ",", "16", ",", "Bold", ",",
+                 "Yellow", ",", 
+                RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+               "]"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"0", ",", "0", ",", 
+                RowBox[{
+                 RowBox[{"-", "scaledSize"}], "*", "8"}]}], "}"}]}], "]"}], ",", 
+            RowBox[{"Text", "[", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"planetData", "[", "\"\<Symbol\>\"", "]"}], 
+                 "<>", "\"\< \>\"", "<>", "planetName"}], ",", "18", ",", 
+                "Bold", ",", "White", ",", 
+                RowBox[{"Background", "->", 
+                 RowBox[{"RGBColor", "[", 
+                  RowBox[{"0.2", ",", "0.2", ",", "0.5", ",", "0.7"}], 
+                  "]"}]}], ",", 
+                RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+               "]"}], ",", 
+              RowBox[{"planetPosition", "+", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "0", ",", 
+                 RowBox[{"scaledSize", "*", "4"}]}], "}"}]}]}], "]"}], ",", 
+            RowBox[{"Text", "[", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               RowBox[{
+                RowBox[{"\"\<D\[IAcute]as: \>\"", "<>", 
+                 RowBox[{"ToString", "[", 
+                  RowBox[{"Round", "[", "time", "]"}], "]"}]}], ",", "14", ",",
+                 "Bold", ",", "Green", ",", 
+                RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+               "]"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"-", "orbitDistance"}], "*", "0.8"}], ",", 
+                RowBox[{"orbitDistance", "*", "0.8"}], ",", "0"}], "}"}]}], 
+             "]"}]}], "}"}], ",", 
+          RowBox[{"ImageSize", "->", "600"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "orbitDistance"}], "*", "1.2"}], ",", 
+               RowBox[{"orbitDistance", "*", "1.2"}]}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "orbitDistance"}], "*", "1.2"}], ",", 
+               RowBox[{"orbitDistance", "*", "1.2"}]}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "orbitDistance"}], "*", "0.8"}], ",", 
+               RowBox[{"orbitDistance", "*", "0.8"}]}], "}"}]}], "}"}]}], ",", 
+          RowBox[{"Boxed", "->", "False"}], ",", 
+          RowBox[{"Axes", "->", "False"}], ",", 
+          RowBox[{"Lighting", "->", 
+           RowBox[{"{", 
+            RowBox[{"\"\<Ambient\>\"", ",", 
+             RowBox[{"GrayLevel", "[", "0.2", "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"\"\<Directional\>\"", ",", "White", ",", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"1", ",", "1", ",", "1"}], "}"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], "}"}]}], "}"}], 
+             ",", 
+             RowBox[{"{", 
+              RowBox[{"\"\<Point\>\"", ",", "Yellow", ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], "}"}]}], "}"}]}], 
+          ",", 
+          RowBox[{"ViewPoint", "->", "viewPoint"}], ",", 
+          RowBox[{"Background", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.05", ",", "0.05", ",", "0.2"}], "]"}]}], ",", 
+          RowBox[{"SphericalRegion", "->", "True"}]}], "]"}]}]}], "]"}]}], 
+    ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"-", "Panel"}]}], " ", "de", " ", 
+      RowBox[{"informaci\[OAcute]n", "--"}]}], "-"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"DisplayPlanetInfo", "[", 
+      RowBox[{"planetName_", ",", "orbitMultiplier_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"planetData", ",", "relativeSize"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"planetData", "=", 
+         RowBox[{"PlanetOrbitData", "[", "planetName", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"relativeSize", "=", 
+         RowBox[{"Round", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"planetData", "[", "\"\<Radius\>\"", "]"}], "/", "6371"}],
+            ",", "0.1"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"Panel", "[", 
+         RowBox[{
+          RowBox[{"Column", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               
+               RowBox[{"\"\<\|01f680 DATOS DEL PLANETA \|01f680\>\"", ",", 
+                "16", ",", "Bold", ",", "Yellow", ",", 
+                RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+               "]"}], ",", 
+              RowBox[{"Spacer", "[", "10", "]"}], ",", 
+              RowBox[{"Grid", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{"\"\<Planeta:\>\"", ",", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"planetName", "<>", "\"\< \>\"", "<>", 
+                    RowBox[{"planetData", "[", "\"\<Symbol\>\"", "]"}]}], ",",
+                     "16", ",", "Bold", ",", "Yellow"}], "]"}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"\"\<Distancia al Sol:\>\"", ",", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"ToString", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "planetData", "[", "\"\<OrbitalDistance\>\"", "]"}], "*", 
+                    "orbitMultiplier"}], "]"}], 
+                    "<>", "\"\< millones de km\>\""}], ",", "Bold", ",", 
+                    "White"}], "]"}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"\"\<A\[NTilde]o planetario:\>\"", ",", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"ToString", "[", 
+                    RowBox[{"Round", "[", 
+                    RowBox[{"planetData", "[", "\"\<OrbitalPeriod\>\"", "]"}],
+                     "]"}], "]"}], "<>", "\"\< d\[IAcute]as\>\""}], ",", 
+                    "Bold", ",", "White"}], "]"}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"\"\<Tama\[NTilde]o vs Tierra:\>\"", ",", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"ToString", "[", "relativeSize", "]"}], 
+                    "<>", "\"\< veces\>\""}], ",", "Bold", ",", "LightBlue"}],
+                     "]"}]}], "}"}]}], "}"}], ",", 
+                RowBox[{"Alignment", "->", "Left"}], ",", 
+                RowBox[{"Spacings", "->", 
+                 RowBox[{"{", 
+                  RowBox[{"0.8", ",", "0.5"}], "}"}]}]}], "]"}], ",", 
+              RowBox[{"Spacer", "[", "10", "]"}], ",", 
+              RowBox[{"Panel", "[", 
+               RowBox[{
+                RowBox[{"Column", "[", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01f31f DATO CURIOSO \|01f31f\>\"", ",", 
+                    "14", ",", "Bold", ",", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"1", ",", "0.5", ",", "0"}], "]"}], ",", 
+                    RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+                    "]"}], ",", 
+                    RowBox[{"Spacer", "[", "5", "]"}], ",", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"Switch", "[", 
+                    RowBox[{
+                    "planetName", ",", "\"\<Mercury\>\"", 
+                    ",", "\"\<\[DownExclamation]Es el planeta m\[AAcute]s r\
+\[AAcute]pido! Da una vuelta al Sol en solo 88 d\[IAcute]as\>\"", 
+                    ",", "\"\<Venus\>\"", 
+                    ",", "\"\<\[DownExclamation]El planeta m\[AAcute]s \
+caliente! Tiene nubes de \[AAcute]cido\>\"", ",", "\"\<Earth\>\"", 
+                    ",", "\"\<\[DownExclamation]Nuestro hogar! El \
+\[UAcute]nico planeta con vida\>\"", ",", "\"\<Mars\>\"", 
+                    ",", "\"\<\[DownExclamation]El planeta rojo! Tiene el \
+volc\[AAcute]n m\[AAcute]s grande del sistema solar\>\"", 
+                    ",", "\"\<Jupiter\>\"", 
+                    ",", "\"\<\[DownExclamation]El gigante! Tiene una \
+tormenta tan grande que caben 3 Tierras\>\"", ",", "\"\<Saturn\>\"", 
+                    ",", "\"\<\[DownExclamation]El rey de los anillos! Sus \
+anillos est\[AAcute]n hechos de hielo\>\"", ",", "\"\<Uranus\>\"", 
+                    ",", "\"\<\[DownExclamation]Se acuesta de lado! Gira \
+tumbado\>\"", ",", "\"\<Neptune\>\"", 
+                    ",", "\"\<\[DownExclamation]El planeta ventoso! Tiene los \
+vientos m\[AAcute]s fuertes\>\"", ",", "_", 
+                    ",", "\"\<\[DownExclamation]Planeta misterioso!\>\""}], 
+                    "]"}], ",", "12", ",", "Italic", ",", "LightGreen", ",", 
+                    RowBox[{"TextAlignment", "->", "Center"}], ",", 
+                    RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+                    "]"}]}], "}"}], ",", 
+                  RowBox[{"Alignment", "->", "Center"}]}], "]"}], ",", 
+                RowBox[{"Background", "->", 
+                 RowBox[{"RGBColor", "[", 
+                  RowBox[{"0.3", ",", "0.2", ",", "0.5"}], "]"}]}]}], "]"}]}],
+              "}"}], ",", 
+            RowBox[{"Alignment", "->", "Center"}]}], "]"}], ",", 
+          RowBox[{"Background", "->", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.1", ",", "0.1", ",", "0.3"}], "]"}]}], ",", 
+          RowBox[{"ImageSize", "->", "300"}], ",", 
+          RowBox[{"RoundingRadius", "->", "15"}]}], "]"}]}]}], "]"}]}], ";"}],
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"-", "Interfaz"}]}], " ", 
+      RowBox[{"principal", "--"}]}], "-"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"CreatePlanetSelector3D", "[", "]"}], ":=", 
+     RowBox[{"DynamicModule", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"selectedPlanet", "=", "\"\<Earth\>\""}], ",", 
+         RowBox[{"orbitTime", "=", "0"}], ",", 
+         RowBox[{"animationRunning", "=", "False"}], ",", 
+         RowBox[{"animationSpeed", "=", "1"}], ",", 
+         RowBox[{"viewPoint", "=", 
+          RowBox[{"{", 
+           RowBox[{"2", ",", "1", ",", "1"}], "}"}]}], ",", 
+         RowBox[{"orbitMultiplier", "=", "1"}], ",", 
+         RowBox[{"showRocket", "=", "False"}]}], "}"}], ",", 
+       RowBox[{"Column", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"(*", "Encabezado", "*)"}], 
+          RowBox[{
+           RowBox[{"Panel", "[", 
+            RowBox[{
+             RowBox[{"Column", "[", 
+              RowBox[{"{", 
+               RowBox[{"Row", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"Style", "[", 
+                    RowBox[{"\"\<\|01f680\>\"", ",", "40"}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "15", "]"}], ",", 
+                   RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<SISTEMA SOLAR 3D ESF\[CapitalEAcute]RICO\>\"",
+                     ",", "22", ",", "Bold", ",", "Yellow", ",", 
+                    RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+                    "]"}], ",", 
+                   RowBox[{"Spacer", "[", "15", "]"}], ",", 
+                   RowBox[{"Style", "[", 
+                    RowBox[{"\"\<\|01f320\>\"", ",", "40"}], "]"}]}], "}"}], ",", 
+                 RowBox[{"Alignment", "->", "Center"}]}], "]"}], "}"}], "]"}],
+              ",", 
+             RowBox[{"Background", "->", 
+              RowBox[{"RGBColor", "[", 
+               RowBox[{"0.2", ",", "0.1", ",", "0.4"}], "]"}]}]}], "]"}], ",", 
+           RowBox[{"Spacer", "[", "8", "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Panel", " ", "de", " ", "controles"}], "*)"}], 
+           RowBox[{"Panel", "[", 
+            RowBox[{
+             RowBox[{"Column", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"Style", "[", 
+                 
+                 RowBox[{"\"\<\|01f3ae CONTROLES\>\"", ",", "14", ",", "Bold",
+                   ",", "White", ",", 
+                  RowBox[{"FontFamily", "->", "\"\<Comic Sans MS\>\""}]}], 
+                 "]"}], ",", 
+                RowBox[{"Spacer", "[", "8", "]"}], ",", 
+                RowBox[{"Row", "[", 
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"Column", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01f30d PLANETA\>\"", ",", "11", ",", 
+                    "Bold", ",", "LightBlue"}], "]"}], ",", 
+                    RowBox[{"PopupMenu", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "selectedPlanet", "]"}], ",", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"#", "->", 
+                    RowBox[{"(", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"#", "<>", "\"\< \>\"", "<>", 
+                    RowBox[{
+                    RowBox[{"PlanetOrbitData", "[", "#", "]"}], 
+                    "[", "\"\<Symbol\>\"", "]"}]}], ",", "12", ",", "Bold"}], 
+                    "]"}], ")"}]}], "&"}], "/@", 
+                    RowBox[{"{", 
+                    
+                    RowBox[{"\"\<Mercury\>\"", ",", "\"\<Venus\>\"", 
+                    ",", "\"\<Earth\>\"", ",", "\"\<Mars\>\"", 
+                    ",", "\"\<Jupiter\>\"", ",", "\"\<Saturn\>\"", 
+                    ",", "\"\<Uranus\>\"", ",", "\"\<Neptune\>\""}], "}"}]}], 
+                    ",", 
+                    RowBox[{"ImageSize", "->", "150"}]}], "]"}]}], "}"}], 
+                    "]"}], ",", 
+                   RowBox[{"Spacer", "[", "20", "]"}], ",", 
+                   RowBox[{"Column", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\:26a1 VELOCIDAD\>\"", ",", "11", ",", 
+                    "Bold", ",", "LightBlue"}], "]"}], ",", 
+                    RowBox[{"Slider", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "animationSpeed", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0.1", ",", "5", ",", "0.1"}], "}"}], ",", 
+                    RowBox[{"ImageSize", "->", "150"}]}], "]"}], ",", 
+                    RowBox[{"Dynamic", "@", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"\"\<Velocidad: \>\"", "<>", 
+                    RowBox[{"ToString", "[", "animationSpeed", "]"}], 
+                    "<>", "\"\<x\>\""}], ",", "10", ",", "Green"}], "]"}]}]}],
+                     "}"}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "20", "]"}], ",", 
+                   RowBox[{"Column", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01fa90 \[CapitalOAcute]RBITA\>\"", ",", 
+                    "11", ",", "Bold", ",", "LightBlue"}], "]"}], ",", 
+                    RowBox[{"Slider", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "orbitMultiplier", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0.5", ",", "2", ",", "0.1"}], "}"}], ",", 
+                    RowBox[{"ImageSize", "->", "150"}]}], "]"}], ",", 
+                    RowBox[{"Dynamic", "@", 
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"\"\<Multiplicador: \>\"", "<>", 
+                    RowBox[{"ToString", "[", "orbitMultiplier", "]"}], 
+                    "<>", "\"\<x\>\""}], ",", "10", ",", "Orange"}], 
+                    "]"}]}]}], "}"}], "]"}]}], "}"}], "]"}], ",", 
+                RowBox[{"Spacer", "[", "8", "]"}], ",", 
+                RowBox[{"Row", "[", 
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"Button", "[", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01f680 ENVIAR COHETE\>\"", ",", "11", ",", 
+                    "Bold"}], "]"}], ",", 
+                    RowBox[{"showRocket", "=", "True"}], ",", 
+                    RowBox[{"Background", "->", 
+                    RowBox[{"If", "[", 
+                    RowBox[{"showRocket", ",", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"0", ",", "0.5", ",", "0"}], "]"}], ",", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"0", ",", "0.7", ",", "0"}], "]"}]}], "]"}]}], ",", 
+                    RowBox[{"ImageSize", "->", "120"}]}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "10", "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\:23f8\:fe0f PAUSAR\>\"", ",", "11", ",", 
+                    "Bold"}], "]"}], ",", 
+                    RowBox[{"animationRunning", "=", "False"}], ",", 
+                    RowBox[{"Background", "->", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"1", ",", "0.5", ",", "0"}], "]"}]}], ",", 
+                    RowBox[{"ImageSize", "->", "80"}]}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "10", "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\[FilledRightTriangle]\:fe0f REANUDAR\>\"", ",",
+                     "11", ",", "Bold"}], "]"}], ",", 
+                    RowBox[{"animationRunning", "=", "True"}], ",", 
+                    RowBox[{"Background", "->", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"0", ",", "0.7", ",", "0"}], "]"}]}], ",", 
+                    RowBox[{"ImageSize", "->", "90"}]}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "10", "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01f504 REINICIAR\>\"", ",", "11", ",", 
+                    "Bold"}], "]"}], ",", 
+                    RowBox[{
+                    RowBox[{"orbitTime", "=", "0"}], ";", 
+                    RowBox[{"orbitMultiplier", "=", "1"}], ";", 
+                    RowBox[{"showRocket", "=", "False"}]}], ",", 
+                    RowBox[{"Background", "->", 
+                    RowBox[{"RGBColor", "[", 
+                    RowBox[{"1", ",", "0.2", ",", "0.2"}], "]"}]}], ",", 
+                    RowBox[{"ImageSize", "->", "100"}]}], "]"}]}], "}"}], 
+                 "]"}], ",", 
+                RowBox[{"Spacer", "[", "5", "]"}], ",", 
+                RowBox[{"Row", "[", 
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<\|01f440 VISTA:\>\"", ",", "10", ",", "Bold",
+                     ",", "White"}], "]"}], ",", 
+                   RowBox[{"Spacer", "[", "5", "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{"\"\<\|01f6f0\:fe0f Sat\[EAcute]lite\>\"", ",", 
+                    RowBox[{"viewPoint", "=", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0", ",", "3"}], "}"}]}], ",", 
+                    RowBox[{"Background", "->", "Gray"}], ",", 
+                    RowBox[{"ImageSize", "->", "80"}]}], "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{"\"\<\|01f468\:200d\|01f680 Cercana\>\"", ",", 
+                    RowBox[{"viewPoint", "=", 
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "0.5", ",", "1"}], "}"}]}], ",", 
+                    RowBox[{"Background", "->", "Gray"}], ",", 
+                    RowBox[{"ImageSize", "->", "90"}]}], "]"}], ",", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{"\"\<\|01f31e Solar\>\"", ",", 
+                    RowBox[{"viewPoint", "=", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "2", ",", "0"}], "}"}]}], ",", 
+                    RowBox[{"Background", "->", "Gray"}], ",", 
+                    RowBox[{"ImageSize", "->", "70"}]}], "]"}]}], "}"}], 
+                 "]"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Background", "->", 
+              RowBox[{"RGBColor", "[", 
+               RowBox[{"0.15", ",", "0.15", ",", "0.3"}], "]"}]}], ",", 
+             RowBox[{"RoundingRadius", "->", "10"}]}], "]"}], ",", 
+           RowBox[{"Spacer", "[", "8", "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Visualizaci\[OAcute]n", " ", "principal"}], "*)"}], 
+           RowBox[{"Dynamic", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{"animationRunning", ",", 
+               RowBox[{"orbitTime", "+=", "animationSpeed"}]}], "]"}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"Panel", "[", 
+              RowBox[{
+               RowBox[{"Row", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"ShowPlanetOrbit3D", "[", 
+                   RowBox[{
+                   "selectedPlanet", ",", "orbitTime", ",", "orbitMultiplier",
+                     ",", "showRocket", ",", "viewPoint"}], "]"}], ",", 
+                  RowBox[{"Spacer", "[", "10", "]"}], ",", 
+                  RowBox[{"DisplayPlanetInfo", "[", 
+                   RowBox[{"selectedPlanet", ",", "orbitMultiplier"}], 
+                   "]"}]}], "}"}], "]"}], ",", 
+               RowBox[{"Background", "->", 
+                RowBox[{"RGBColor", "[", 
+                 RowBox[{"0.1", ",", "0.1", ",", "0.2"}], "]"}]}], ",", 
+               RowBox[{"RoundingRadius", "->", "10"}]}], "]"}]}], "]"}]}], 
+          "}"}], ",", 
+         RowBox[{"Background", "->", 
+          RowBox[{"RGBColor", "[", 
+           RowBox[{"0.05", ",", "0.05", ",", "0.15"}], "]"}]}]}], "]"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"===", 
+     RowBox[{"INICIAR", " ", "EL", " ", "SISTEMA", " ", "SOLAR"}], "==="}], 
+    "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+    "Print", "[", "\"\<\|01f680 \[DownExclamation]SISTEMA SOLAR 3D \
+INICIADO!\>\"", "]"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{
+    "Print", "[", "\"\<\|01f30d Selecciona un planeta para explorar\>\"", 
+     "]"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{
+    "Print", "[", "\"\<\|01f3ae Usa los controles para cambiar la vista y \
+velocidad\>\"", "]"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"CreatePlanetSelector3D", "[", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.972868346525404*^9, 3.972868346525404*^9}, {
+   3.972873101611908*^9, 3.9728731035704346`*^9}, {3.9728757687602863`*^9, 
+   3.9728757700846004`*^9}, {3.972883510567932*^9, 3.972883512235098*^9}, {
+   3.972885609017706*^9, 3.972885610302719*^9}, 3.9728856631347675`*^9, {
+   3.9728857318001804`*^9, 3.972885732551201*^9}, {3.9728865983424053`*^9, 
+   3.972886599703661*^9}, 3.97288677973575*^9, 3.9728868801441784`*^9, {
+   3.972887141149414*^9, 3.9728871433995724`*^9}, {3.972909260894884*^9, 
+   3.972909282845064*^9}, {3.9729094837236385`*^9, 3.972909489482298*^9}, {
+   3.9729102712265015`*^9, 3.9729102994635315`*^9}, {3.972914100770668*^9, 
+   3.972914118054636*^9}, {3.9729141898589954`*^9, 3.972914190737034*^9}, {
+   3.9729142238906975`*^9, 3.972914243407959*^9}, {3.972914328033987*^9, 
+   3.9729143814948845`*^9}, {3.9729144380418835`*^9, 3.972914504125822*^9}, 
+   3.972914534747654*^9, 3.972914835889532*^9, {3.9729150500578823`*^9, 
+   3.9729151564456882`*^9}, {3.972915593574066*^9, 3.972915599605837*^9}, 
+   3.9729156393045464`*^9, {3.972915827530136*^9, 3.9729158279248104`*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"c694777e-52a8-504b-9820-7e16013076aa"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"\|01f680 \[DownExclamation]SISTEMA SOLAR 3D \
+INICIADO!\"\>"], "Print",
+ CellChangeTimes->{3.972915943440811*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[13]:=",ExpressionUUID->"797c2973-4a7f-924d-bf8d-7ee79fc4c30d"],
+
+Cell[BoxData["\<\"\|01f30d Selecciona un planeta para explorar\"\>"], "Print",
+ CellChangeTimes->{3.9729159434494114`*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[13]:=",ExpressionUUID->"cf921f35-1654-b342-8c78-026f80981dbc"],
+
+Cell[BoxData["\<\"\|01f3ae Usa los controles para cambiar la vista y \
+velocidad\"\>"], "Print",
+ CellChangeTimes->{3.9729159434494114`*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[13]:=",ExpressionUUID->"993fb527-0c46-bf49-8296-1621ca5cca1a"]
+}, Open  ]],
+
+Cell[BoxData[
+ DynamicModuleBox[{$CellContext`selectedPlanet$$ = 
+  "Earth", $CellContext`orbitTime$$ = 0, $CellContext`animationRunning$$ = 
+  False, $CellContext`animationSpeed$$ = 1, $CellContext`viewPoint$$ = {2, 1, 
+  1}, $CellContext`orbitMultiplier$$ = 1, $CellContext`showRocket$$ = False}, 
+  TagBox[GridBox[{
+     {
+      PanelBox[
+       TagBox[GridBox[{
+          {
+           TemplateBox[{
+             StyleBox["\"\|01f680\"", 40, StripOnInput -> False], 
+             TemplateBox[{15}, "Spacer1"], 
+             StyleBox[
+             "\"SISTEMA SOLAR 3D ESF\[CapitalEAcute]RICO\"", 22, Bold, 
+              RGBColor[1, 1, 0], FontFamily -> "Comic Sans MS", StripOnInput -> 
+              False], 
+             TemplateBox[{15}, "Spacer1"], 
+             StyleBox["\"\|01f320\"", 40, StripOnInput -> False]},
+            "Row",
+            DisplayFunction->(PaneBox[
+              RowBox[{
+                TemplateSlotSequence[1, "\[InvisibleSpace]"]}], Alignment -> 
+              Center]& ),
+            InterpretationFunction->(RowBox[{"Row", "[", 
+               RowBox[{
+                 RowBox[{"{", 
+                   TemplateSlotSequence[1, ","], "}"}], ",", 
+                 RowBox[{"Alignment", "\[Rule]", "Center"}]}], "]"}]& )]}
+         },
+         DefaultBaseStyle->"Column",
+         GridBoxAlignment->{"Columns" -> {{Left}}},
+         GridBoxItemSize->{
+          "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+        "Column"],
+       Background->RGBColor[0.2, 0.1, 0.4]]},
+     {
+      TemplateBox[{8},
+       "Spacer1"]},
+     {
+      PanelBox[
+       TagBox[GridBox[{
+          {
+           StyleBox["\<\"\|01f3ae CONTROLES\"\>",
+            StripOnInput->False,
+            LineColor->GrayLevel[1],
+            FrontFaceColor->GrayLevel[1],
+            BackFaceColor->GrayLevel[1],
+            GraphicsColor->GrayLevel[1],
+            FontFamily->"Comic Sans MS",
+            FontSize->14,
+            FontWeight->Bold,
+            FontColor->GrayLevel[1]]},
+          {
+           TemplateBox[{8},
+            "Spacer1"]},
+          {
+           TemplateBox[{
+             TagBox[
+              GridBox[{{
+                 StyleBox["\"\|01f30d PLANETA\"", 11, Bold, 
+                  RGBColor[0.87, 0.94, 1], StripOnInput -> False]}, {
+                 PopupMenuBox[
+                  Dynamic[$CellContext`selectedPlanet$$], {
+                  "Mercury" -> 
+                   StyleBox[
+                    "\"Mercury \|01f7e4\"", 12, Bold, StripOnInput -> False], 
+                   "Venus" -> 
+                   StyleBox[
+                    "\"Venus \|01f7e0\"", 12, Bold, StripOnInput -> False], 
+                   "Earth" -> 
+                   StyleBox[
+                    "\"Earth \|01f30d\"", 12, Bold, StripOnInput -> False], 
+                   "Mars" -> StyleBox[
+                    "\"Mars \|01f534\"", 12, Bold, StripOnInput -> False], 
+                   "Jupiter" -> 
+                   StyleBox[
+                    "\"Jupiter \|01f7e1\"", 12, Bold, StripOnInput -> False], 
+                   "Saturn" -> 
+                   StyleBox[
+                    "\"Saturn \|01fa90\"", 12, Bold, StripOnInput -> False], 
+                   "Uranus" -> 
+                   StyleBox[
+                    "\"Uranus \|01f535\"", 12, Bold, StripOnInput -> False], 
+                   "Neptune" -> 
+                   StyleBox[
+                    "\"Neptune \|01f7e4\"", 12, Bold, StripOnInput -> False]},
+                   ImageSize -> 150]}}, 
+               GridBoxAlignment -> {"Columns" -> {{Left}}}, DefaultBaseStyle -> 
+               "Column", 
+               GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+              "Column"], 
+             TemplateBox[{20}, "Spacer1"], 
+             TagBox[
+              GridBox[{{
+                 StyleBox["\"\:26a1 VELOCIDAD\"", 11, Bold, 
+                  RGBColor[0.87, 0.94, 1], StripOnInput -> False]}, {
+                 SliderBox[
+                  Dynamic[$CellContext`animationSpeed$$], {0.1, 5, 0.1}, 
+                  ImageSize -> 150]}, {
+                 DynamicBox[
+                  ToBoxes[
+                   
+                   Style[("Velocidad: " <> 
+                    ToString[$CellContext`animationSpeed$$]) <> "x", 10, 
+                    Green], StandardForm]]}}, 
+               GridBoxAlignment -> {"Columns" -> {{Left}}}, DefaultBaseStyle -> 
+               "Column", 
+               GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+              "Column"], 
+             TemplateBox[{20}, "Spacer1"], 
+             TagBox[
+              GridBox[{{
+                 StyleBox["\"\|01fa90 \[CapitalOAcute]RBITA\"", 11, Bold, 
+                  RGBColor[0.87, 0.94, 1], StripOnInput -> False]}, {
+                 SliderBox[
+                  Dynamic[$CellContext`orbitMultiplier$$], {0.5, 2, 0.1}, 
+                  ImageSize -> 150]}, {
+                 DynamicBox[
+                  ToBoxes[
+                   
+                   Style[("Multiplicador: " <> 
+                    ToString[$CellContext`orbitMultiplier$$]) <> "x", 10, 
+                    Orange], StandardForm]]}}, 
+               GridBoxAlignment -> {"Columns" -> {{Left}}}, DefaultBaseStyle -> 
+               "Column", 
+               GridBoxItemSize -> {
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+              "Column"]},
+            "RowDefault"]},
+          {
+           TemplateBox[{8},
+            "Spacer1"]},
+          {
+           TemplateBox[{
+             ButtonBox[
+              StyleBox[
+              "\"\|01f680 ENVIAR COHETE\"", 11, Bold, StripOnInput -> False], 
+              ButtonFunction :> ($CellContext`showRocket$$ = True), 
+              Background -> RGBColor[0, 0.7, 0], ImageSize -> 120, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"], 
+             TemplateBox[{10}, "Spacer1"], 
+             ButtonBox[
+              StyleBox[
+              "\"\:23f8\:fe0f PAUSAR\"", 11, Bold, StripOnInput -> False], 
+              ButtonFunction :> ($CellContext`animationRunning$$ = False), 
+              Background -> RGBColor[1, 0.5, 0], ImageSize -> 80, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"], 
+             TemplateBox[{10}, "Spacer1"], 
+             ButtonBox[
+              StyleBox[
+              "\"\[FilledRightTriangle]\:fe0f REANUDAR\"", 11, Bold, 
+               StripOnInput -> False], 
+              ButtonFunction :> ($CellContext`animationRunning$$ = True), 
+              Background -> RGBColor[0, 0.7, 0], ImageSize -> 90, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"], 
+             TemplateBox[{10}, "Spacer1"], 
+             ButtonBox[
+              StyleBox[
+              "\"\|01f504 REINICIAR\"", 11, Bold, StripOnInput -> False], 
+              ButtonFunction :> ($CellContext`orbitTime$$ = 
+                0; $CellContext`orbitMultiplier$$ = 
+                1; $CellContext`showRocket$$ = False), Background -> 
+              RGBColor[1, 0.2, 0.2], ImageSize -> 100, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"]},
+            "RowDefault"]},
+          {
+           TemplateBox[{5},
+            "Spacer1"]},
+          {
+           TemplateBox[{
+             StyleBox["\"\|01f440 VISTA:\"", 10, Bold, 
+              GrayLevel[1], StripOnInput -> False], 
+             TemplateBox[{5}, "Spacer1"], 
+             ButtonBox[
+             "\"\|01f6f0\:fe0f Sat\[EAcute]lite\"", 
+              ButtonFunction :> ($CellContext`viewPoint$$ = {0, 0, 3}), 
+              Background -> GrayLevel[0.5], ImageSize -> 80, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"], 
+             ButtonBox[
+             "\"\|01f468\:200d\|01f680 Cercana\"", 
+              ButtonFunction :> ($CellContext`viewPoint$$ = {1, 0.5, 1}), 
+              Background -> GrayLevel[0.5], ImageSize -> 90, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"], 
+             ButtonBox[
+             "\"\|01f31e Solar\"", 
+              ButtonFunction :> ($CellContext`viewPoint$$ = {0, 2, 0}), 
+              Background -> GrayLevel[0.5], ImageSize -> 70, Appearance -> 
+              Automatic, Evaluator -> Automatic, Method -> "Preemptive"]},
+            "RowDefault"]}
+         },
+         DefaultBaseStyle->"Column",
+         GridBoxAlignment->{"Columns" -> {{Left}}},
+         GridBoxItemSize->{
+          "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+        "Column"],
+       RoundingRadius -> 10,
+       Background->RGBColor[0.15, 0.15, 0.3]]},
+     {
+      TemplateBox[{8},
+       "Spacer1"]},
+     {
+      DynamicBox[ToBoxes[If[$CellContext`animationRunning$$, 
+          AddTo[$CellContext`orbitTime$$, $CellContext`animationSpeed$$]]; 
+        Panel[
+          Row[{
+            $CellContext`ShowPlanetOrbit3D[$CellContext`selectedPlanet$$, \
+$CellContext`orbitTime$$, $CellContext`orbitMultiplier$$, \
+$CellContext`showRocket$$, $CellContext`viewPoint$$], 
+            Spacer[10], 
+            $CellContext`DisplayPlanetInfo[$CellContext`selectedPlanet$$, \
+$CellContext`orbitMultiplier$$]}], Background -> RGBColor[0.1, 0.1, 0.2], 
+          RoundingRadius -> 10], StandardForm],
+       ImageSizeCache->{332.34666876792903`, {8.07568359375, 12.72509765625}}]}
+    },
+    DefaultBaseStyle->"Column",
+    GridBoxAlignment->{"Columns" -> {{Left}}},
+    GridBoxBackground->{"Columns" -> {{
+         RGBColor[0.05, 0.05, 0.15]}}},
+    GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+   "Column"],
+  DynamicModuleValues:>{}]], "Output",
+ CellChangeTimes->{3.9729159434534397`*^9},
+ CellLabel->"Out[22]=",ExpressionUUID->"673f0819-22c5-cc45-83b8-7d62293a4638"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.972915927438654*^9, 
+  3.972915927438654*^9}},ExpressionUUID->"29250b3d-fc02-2f48-b7dd-\
+76a98f4f31b2"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"\|01f3ae Usa los controles para cambiar la vista y \
+velocidad\"\>"], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.972914538339018*^9, 3.9729149770092487`*^9, 
+  3.9729151794238777`*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[48]:=",ExpressionUUID->"695d8986-3ae9-9148-b77e-b14b99713211"],
+
+Cell[BoxData["\<\"\|01f30d Selecciona un planeta para explorar\"\>"], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.972914538339018*^9, 3.9729149770092487`*^9, 
+  3.9729151794228745`*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[48]:=",ExpressionUUID->"badea7ff-48df-2a4c-9409-5cabd094450b"],
+
+Cell[BoxData["\<\"\|01f680 \[DownExclamation]SISTEMA SOLAR 3D \
+INICIADO!\"\>"], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.972914538339018*^9, 3.9729149770092487`*^9, 
+  3.9729151794197884`*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[48]:=",ExpressionUUID->"82b9a243-f962-264d-b1ac-98332a7c2628"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.972914538339018*^9, 3.9729149770092487`*^9, 
+  3.972915408026062*^9, 
+  3.972915584604023*^9},ExpressionUUID->"56522dc9-122f-244c-84d9-\
+92ab84529653"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.972914538495756*^9, 
+  3.9729149718005466`*^9},ExpressionUUID->"d4efabe8-9104-2d4d-94a1-\
+b0452b27951e"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.9729145384977703`*^9, 3.9729149691684856`*^9, 
+  3.9729155850860405`*^9},ExpressionUUID->"b85ba145-3d1c-3049-bd2c-\
+ab12eeef64ea"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{
+  3.972887145579132*^9, 3.972909284287508*^9, 3.972909491748396*^9, 
+   3.9729145384987984`*^9, 3.9729149653962097`*^9, 3.9729152636233997`*^9, 
+   3.9729153521438007`*^9, {3.9729154197084656`*^9, 3.9729154219706078`*^9}, {
+   3.9729154973605614`*^9, 3.972915501015932*^9}, 
+   3.97291553478368*^9},ExpressionUUID->"7aaec275-7be7-a243-a1fd-\
+7d3f2c8bd6f2"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.9729145384997635`*^9, 3.972914961680685*^9, 
+  3.9729150461762886`*^9},ExpressionUUID->"de014d61-b2fe-354f-a6cf-\
+bdf9c19b812f"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491748396*^9, 3.9729145385013943`*^9, 3.9729149502630367`*^9, 
+  3.972915308049242*^9},ExpressionUUID->"05b356b8-fca3-614a-a467-\
+2cfbb6013024"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{
+  3.972887145579132*^9, 3.972909284287508*^9, 3.972909491748396*^9, 
+   3.972914538503132*^9, {3.972914945931713*^9, 
+   3.9729149543041935`*^9}},ExpressionUUID->"7589475c-9cda-3c44-9feb-\
+b243c3b658a8"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.972914991101465*^9, 
+  3.9729149911110783`*^9}},ExpressionUUID->"400c0c0c-b7ae-6c40-be2f-\
+7841576d39c9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.972914997963995*^9, 3.9729150039960613`*^9}, {
+  3.9729155816794453`*^9, 
+  3.9729155820140743`*^9}},ExpressionUUID->"125ce385-dd7b-8841-bf8c-\
+7f165f80a5ec"],
+
+Cell[BoxData[""], "Print",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{3.972887145579132*^9, 3.972909284287508*^9, 
+  3.972909491752016*^9, 
+  3.97291027523003*^9},ExpressionUUID->"1766bf2f-aa63-aa41-80a6-ec599ae8d6da"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.9729102267087173`*^9, 3.972910231117264*^9}, 
+   3.9729150341580505`*^9},ExpressionUUID->"cd981895-273f-984f-b915-\
+a6541f9030a9"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{3.972885670568083*^9, 3.9728857042226334`*^9},
+ CellLabel->"",ExpressionUUID->"ca218f66-6fa7-854e-a31e-e1be249c94d0"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"Juego", " ", 
+    RowBox[{"Simple", ":", 
+     RowBox[{"Disparar", " ", "a", " ", "Jupiter"}]}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", 
+     RowBox[{
+     "JupiterGame", ",", "LaunchProjectile", ",", "UpdateProjectiles"}], 
+     "]"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Variables", " ", "globales"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"projectiles", "=", 
+     RowBox[{"{", "}"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"jupiterHealth", "=", "100"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"gameRunning", "=", "True"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Funcion", " ", "para", " ", "lanzar", " ", "proyectil"}], "*)"}],
+    "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"LaunchProjectile", "[", "mousePos_", "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "newProjectile", "}"}], ",", 
+      RowBox[{
+       RowBox[{"newProjectile", "=", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Position\>\"", "->", "mousePos"}], ",", 
+          RowBox[{"\"\<Velocity\>\"", "->", 
+           RowBox[{
+            RowBox[{"-", 
+             RowBox[{"Normalize", "[", "mousePos", "]"}]}], "*", "3"}]}], ",", 
+          RowBox[{"\"\<Radius\>\"", "->", "0.2"}], ",", 
+          RowBox[{"\"\<Color\>\"", "->", "Red"}]}], "|>"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"projectiles", "=", 
+        RowBox[{"Append", "[", 
+         RowBox[{"projectiles", ",", "newProjectile"}], "]"}]}], ";"}]}], 
+     "]"}]}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Actualizar", " ", "proyectiles"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"UpdateProjectiles", "[", "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"newProjectiles", "=", 
+         RowBox[{"{", "}"}]}], ",", 
+        RowBox[{"hit", "=", "False"}]}], "}"}], ",", 
+      RowBox[{
+       RowBox[{"Do", "[", 
+        RowBox[{
+         RowBox[{"Module", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"proj", "=", "p"}], ",", "newPos", ",", "distance"}], 
+            "}"}], ",", 
+           RowBox[{
+            RowBox[{"newPos", "=", 
+             RowBox[{
+              RowBox[{"proj", "[", "\"\<Position\>\"", "]"}], "+", 
+              RowBox[{
+               RowBox[{"proj", "[", "\"\<Velocity\>\"", "]"}], "*", 
+               "0.2"}]}]}], ";", "\[IndentingNewLine]", 
+            RowBox[{"distance", "=", 
+             RowBox[{"Norm", "[", "newPos", "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{"distance", "<", "2"}], ",", 
+              RowBox[{"(*", 
+               RowBox[{"Colision", " ", "con", " ", "Jupiter"}], "*)"}], 
+              RowBox[{
+               RowBox[{"jupiterHealth", "=", 
+                RowBox[{"Max", "[", 
+                 RowBox[{"0", ",", 
+                  RowBox[{"jupiterHealth", "-", "5"}]}], "]"}]}], ";", 
+               "\[IndentingNewLine]", 
+               RowBox[{"hit", "=", "True"}], ";"}], ",", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"distance", "<", "25"}], ",", 
+                RowBox[{"(*", 
+                 RowBox[{"Proyectil", " ", "activo"}], "*)"}], 
+                RowBox[{
+                 RowBox[{"AppendTo", "[", 
+                  RowBox[{"newProjectiles", ",", 
+                   RowBox[{"<|", 
+                    RowBox[{
+                    RowBox[{"\"\<Position\>\"", "->", "newPos"}], ",", 
+                    RowBox[{"\"\<Velocity\>\"", "->", 
+                    RowBox[{"proj", "[", "\"\<Velocity\>\"", "]"}]}], ",", 
+                    RowBox[{"\"\<Radius\>\"", "->", 
+                    RowBox[{"proj", "[", "\"\<Radius\>\"", "]"}]}], ",", 
+                    RowBox[{"\"\<Color\>\"", "->", 
+                    RowBox[{"proj", "[", "\"\<Color\>\"", "]"}]}]}], "|>"}]}],
+                   "]"}], ";"}]}], "]"}]}], "]"}]}]}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"p", ",", "projectiles"}], "}"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"projectiles", "=", "newProjectiles"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"If", "[", 
+        RowBox[{"hit", ",", 
+         RowBox[{"Print", "[", 
+          RowBox[{"\"\<\[DownExclamation]Impacto! Salud: \>\"", "<>", 
+           RowBox[{"ToString", "[", "jupiterHealth", "]"}]}], "]"}]}], "]"}], 
+       ";"}]}], "]"}]}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Juego", " ", "principal"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"JupiterGame", "[", "]"}], ":=", 
+    RowBox[{"DynamicModule", "[", 
+     RowBox[{
+      RowBox[{"{", "}"}], ",", 
+      RowBox[{
+       RowBox[{"If", "[", 
+        RowBox[{"gameRunning", ",", 
+         RowBox[{"UpdateProjectiles", "[", "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"jupiterHealth", "<=", "0"}], "&&", "gameRunning"}], ",", 
+         RowBox[{
+          RowBox[{"gameRunning", "=", "False"}], ";", "\[IndentingNewLine]", 
+          RowBox[{
+          "Print", "[", "\"\<\[DownExclamation]Jupiter destruido!\>\"", "]"}],
+           ";"}]}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"EventHandler", "[", 
+        RowBox[{
+         RowBox[{"Graphics", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"(*", "Fondo", "*)"}], 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"Black", ",", 
+               RowBox[{"Rectangle", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"-", "25"}], ",", 
+                   RowBox[{"-", "25"}]}], "}"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"25", ",", "25"}], "}"}]}], "]"}]}], "}"}], ",", 
+             RowBox[{"(*", "Estrellas", "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"White", ",", 
+               RowBox[{"PointSize", "[", "0.002", "]"}], ",", 
+               RowBox[{"Table", "[", 
+                RowBox[{
+                 RowBox[{"Point", "[", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"RandomReal", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "25"}], ",", "25"}], "}"}], "]"}], ",", 
+                    RowBox[{"RandomReal", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "25"}], ",", "25"}], "}"}], "]"}]}], "}"}], 
+                  "]"}], ",", 
+                 RowBox[{"{", "100", "}"}]}], "]"}]}], "}"}], ",", 
+             RowBox[{"(*", "Jupiter", "*)"}], 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"RGBColor", "[", 
+                RowBox[{"0.9", ",", "0.7", ",", "0.3"}], "]"}], ",", 
+               RowBox[{"Disk", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}], ",", "2"}], "]"}]}], "}"}], 
+             ",", 
+             RowBox[{"{", 
+              RowBox[{"Black", ",", 
+               RowBox[{"Thickness", "[", "0.01", "]"}], ",", 
+               RowBox[{"Circle", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}], ",", "2"}], "]"}]}], "}"}], 
+             ",", 
+             RowBox[{"(*", 
+              RowBox[{"Cara", " ", "de", " ", "Jupiter"}], "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"Yellow", ",", 
+               RowBox[{"Disk", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"-", "0.8"}], ",", "0.5"}], "}"}], ",", "0.3"}], 
+                "]"}]}], "}"}], ",", 
+             RowBox[{"(*", 
+              RowBox[{"Ojo", " ", "izquierdo"}], "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"Yellow", ",", 
+               RowBox[{"Disk", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0.8", ",", "0.5"}], "}"}], ",", "0.3"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"(*", 
+              RowBox[{"Ojo", " ", "derecho"}], "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"Black", ",", 
+               RowBox[{"Disk", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{
+                   RowBox[{"-", "0.8"}], ",", "0.5"}], "}"}], ",", "0.1"}], 
+                "]"}]}], "}"}], ",", 
+             RowBox[{"(*", 
+              RowBox[{"Pupila", " ", "izquierda"}], "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"Black", ",", 
+               RowBox[{"Disk", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0.8", ",", "0.5"}], "}"}], ",", "0.1"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"(*", 
+              RowBox[{"Pupila", " ", "derecha"}], "*)"}], 
+             RowBox[{"{", 
+              RowBox[{"Red", ",", 
+               RowBox[{"Thickness", "[", "0.03", "]"}], ",", 
+               RowBox[{"BezierCurve", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"-", "1.2"}], ",", 
+                    RowBox[{"-", "0.5"}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"0", ",", 
+                    RowBox[{"-", "1"}]}], "}"}], ",", 
+                  RowBox[{"{", 
+                   RowBox[{"1.2", ",", 
+                    RowBox[{"-", "0.5"}]}], "}"}]}], "}"}], "]"}]}], "}"}], ",", 
+             RowBox[{"(*", "Boca", "*)"}], 
+             RowBox[{"(*", "Proyectiles", "*)"}], 
+             RowBox[{"Sequence", "@@", 
+              RowBox[{"Table", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"p", "[", "\"\<Color\>\"", "]"}], ",", 
+                  RowBox[{"Disk", "[", 
+                   RowBox[{
+                    RowBox[{"p", "[", "\"\<Position\>\"", "]"}], ",", 
+                    RowBox[{"p", "[", "\"\<Radius\>\"", "]"}]}], "]"}]}], 
+                 "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"p", ",", "projectiles"}], "}"}]}], "]"}]}], ",", 
+             RowBox[{"(*", "Interfaz", "*)"}], 
+             RowBox[{"Text", "[", 
+              RowBox[{
+               RowBox[{"Style", "[", 
+                
+                RowBox[{"\"\<DISPARA A JUPITER\>\"", ",", "20", ",", "Bold", ",",
+                  "White"}], "]"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "22"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+             RowBox[{"Text", "[", 
+              RowBox[{
+               RowBox[{"Style", "[", 
+                RowBox[{
+                 RowBox[{"\"\<Salud: \>\"", "<>", 
+                  RowBox[{"ToString", "[", "jupiterHealth", "]"}]}], ",", 
+                 "16", ",", "Bold", ",", 
+                 RowBox[{"If", "[", 
+                  RowBox[{
+                   RowBox[{"jupiterHealth", ">", "50"}], ",", "Green", ",", 
+                   "Red"}], "]"}]}], "]"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "19"}], "}"}], ",", 
+               RowBox[{"{", 
+                RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"!", "gameRunning"}], ",", 
+               RowBox[{"Text", "[", 
+                RowBox[{
+                 RowBox[{"Style", "[", 
+                  
+                  RowBox[{"\"\<\[DownExclamation]JUPITER DESTRUIDO!\>\"", ",",
+                    "24", ",", "Bold", ",", "Red"}], "]"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+               RowBox[{"{", "}"}]}], "]"}]}], "}"}], ",", 
+           RowBox[{"PlotRange", "->", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "25"}], ",", "25"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "25"}], ",", "25"}], "}"}]}], "}"}]}], ",", 
+           RowBox[{"ImageSize", "->", "600"}]}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"\"\<MouseClicked\>\"", ":>", 
+           RowBox[{"If", "[", 
+            RowBox[{"gameRunning", ",", 
+             RowBox[{"LaunchProjectile", "[", 
+              RowBox[{"MousePosition", "[", "\"\<Graphics\>\"", "]"}], 
+              "]"}]}], "]"}]}], "}"}]}], "]"}]}]}], "]"}]}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Interfaz", " ", "minimalista"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"CreateGame", "[", "]"}], ":=", 
+    RowBox[{"Column", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"Panel", "[", 
+        RowBox[{"Column", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Style", "[", 
+            
+            RowBox[{"\"\<\[DownExclamation]DISPARA A JUPITER!\>\"", ",", "22",
+              ",", "Bold", ",", "White", ",", 
+             RowBox[{"Background", "->", "Red"}]}], "]"}], ",", 
+           RowBox[{"Style", "[", 
+            
+            RowBox[{"\"\<Haz clic en cualquier lugar para disparar\>\"", ",", 
+             "12", ",", "White"}], "]"}]}], "}"}], "]"}], "]"}], ",", 
+       RowBox[{"Button", "[", 
+        RowBox[{"\"\<Reiniciar\>\"", ",", 
+         RowBox[{
+          RowBox[{"projectiles", "=", 
+           RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+          RowBox[{"jupiterHealth", "=", "100"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"gameRunning", "=", "True"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"Print", "[", "\"\<Juego reiniciado\>\"", "]"}]}], ",", 
+         RowBox[{"Background", "->", "Green"}]}], "]"}], ",", 
+       RowBox[{"Spacer", "[", "10", "]"}], ",", 
+       RowBox[{"Dynamic", "[", 
+        RowBox[{"Refresh", "[", 
+         RowBox[{
+          RowBox[{"JupiterGame", "[", "]"}], ",", 
+          RowBox[{"UpdateInterval", "->", "0.1"}]}], "]"}], "]"}]}], "}"}], 
+     "]"}]}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Iniciar", " ", "juego"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+    "Print", "[", "\"\<\[DownExclamation]Juego listo! Haz clic para disparar \
+a Jupiter\>\"", "]"}], ";"}], "\n", 
+   RowBox[{"CreateGame", "[", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.9729101461973896`*^9, 3.9729101461973896`*^9}, 
+   3.972915521930258*^9},
+ CellLabel->"In[23]:=",ExpressionUUID->"dcd3aab6-6186-b14f-98e9-2e4bf91072e7"],
+
+Cell[BoxData["\<\"\[DownExclamation]Juego listo! Haz clic para disparar a \
+Jupiter\"\>"], "Print",
+ CellChangeTimes->{3.972915571003195*^9, 3.972916002435377*^9},
+ CellLabel->
+  "Durante la evaluaci\[OAcute]n de \
+In[23]:=",ExpressionUUID->"c7a5a26d-e0d2-344d-88d4-c496b918728e"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {
+     PanelBox[
+      TagBox[GridBox[{
+         {
+          StyleBox["\<\"\[DownExclamation]DISPARA A JUPITER!\"\>",
+           StripOnInput->False,
+           LineColor->GrayLevel[1],
+           FrontFaceColor->GrayLevel[1],
+           BackFaceColor->GrayLevel[1],
+           GraphicsColor->GrayLevel[1],
+           FontSize->22,
+           FontWeight->Bold,
+           FontColor->GrayLevel[1],
+           Background->RGBColor[1, 0, 0]]},
+         {
+          StyleBox["\<\"Haz clic en cualquier lugar para disparar\"\>",
+           StripOnInput->False,
+           LineColor->GrayLevel[1],
+           FrontFaceColor->GrayLevel[1],
+           BackFaceColor->GrayLevel[1],
+           GraphicsColor->GrayLevel[1],
+           FontSize->12,
+           FontColor->GrayLevel[1]]}
+        },
+        DefaultBaseStyle->"Column",
+        GridBoxAlignment->{"Columns" -> {{Left}}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Column"]]},
+    {
+     ButtonBox["\<\"Reiniciar\"\>",
+      Appearance->Automatic,
+      Background->RGBColor[0, 1, 0],
+      ButtonFunction:>($CellContext`projectiles = {}; \
+$CellContext`jupiterHealth = 100; $CellContext`gameRunning = True; 
+       Print["Juego reiniciado"]),
+      Evaluator->Automatic,
+      Method->"Preemptive"]},
+    {
+     TemplateBox[{10},
+      "Spacer1"]},
+    {
+     DynamicBox[ToBoxes[
+       Refresh[
+        $CellContext`JupiterGame[], UpdateInterval -> 0.1], StandardForm],
+      ImageSizeCache->{
+       94.22460651397702, {2.6025389861315498`, 9.045409890823066}}]}
+   },
+   DefaultBaseStyle->"Column",
+   GridBoxAlignment->{"Columns" -> {{Left}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+  "Column"]], "Output",
+ CellChangeTimes->{3.972916002435377*^9},
+ CellLabel->"Out[32]=",ExpressionUUID->"129c06c4-4c62-184f-a82f-e995405bf828"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.972915931224062*^9, 3.9729159312261963`*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"ca95fbc1-3e96-fb48-8c81-fe2b9ebff584"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.9728758700868797`*^9, 3.9728758950821934`*^9}, 
+   3.972915042910494*^9},
+ CellLabel->"In[1]:=",ExpressionUUID->"f17205b5-a5f5-ec4d-ae1c-f6c7ebd40970"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.9729150418659325`*^9, 
+  3.9729150418659325`*^9}},ExpressionUUID->"1d694a23-ba0d-7f46-8be0-\
+967ee8d8457b"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{3.972915040783722*^9},
+ NumberMarks->False,ExpressionUUID->"3fa9dd0f-a628-5c46-920d-22ec4537f1e8"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.9729150376614895`*^9, 
+  3.9729150376614895`*^9}},ExpressionUUID->"d19fd39c-80c3-4a4a-951f-\
+6d462b27f4ee"]
+},
+WindowSize->{1205.3999999999999`, 688.8},
+WindowMargins->{{0.6, Automatic}, {Automatic, 0}},
+FrontEndVersion->"14.3 para Microsoft Windows (64-bit) (July 8, 2025)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"50e245bf-92f0-4f42-8125-19dcb48f931b"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[554, 20, 398, 8, 33, "Text",ExpressionUUID->"583bf816-0f38-fb49-9fbc-28596e0dd969"],
+Cell[955, 30, 7339, 100, 1060, "Text",ExpressionUUID->"9fe7fb93-6366-a640-a0bd-c026cba2fc8a"],
+Cell[CellGroupData[{
+Cell[8319, 134, 42030, 909, 3175, "Input",ExpressionUUID->"c694777e-52a8-504b-9820-7e16013076aa"],
+Cell[CellGroupData[{
+Cell[50374, 1047, 248, 5, 22, "Print",ExpressionUUID->"797c2973-4a7f-924d-bf8d-7ee79fc4c30d"],
+Cell[50625, 1054, 239, 4, 22, "Print",ExpressionUUID->"cf921f35-1654-b342-8c78-026f80981dbc"],
+Cell[50867, 1060, 257, 5, 22, "Print",ExpressionUUID->"993fb527-0c46-bf49-8296-1621ca5cca1a"]
+}, Open  ]],
+Cell[51139, 1068, 9895, 225, 311, "Output",ExpressionUUID->"673f0819-22c5-cc45-83b8-7d62293a4638"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[61071, 1298, 152, 3, 28, "Input",ExpressionUUID->"29250b3d-fc02-2f48-b7dd-76a98f4f31b2"],
+Cell[CellGroupData[{
+Cell[61248, 1305, 425, 9, 22, "Print",ExpressionUUID->"695d8986-3ae9-9148-b77e-b14b99713211"],
+Cell[61676, 1316, 407, 8, 22, "Print",ExpressionUUID->"badea7ff-48df-2a4c-9409-5cabd094450b"],
+Cell[62086, 1326, 418, 9, 22, "Print",ExpressionUUID->"82b9a243-f962-264d-b1ac-98332a7c2628"],
+Cell[62507, 1337, 318, 7, 22, "Print",ExpressionUUID->"56522dc9-122f-244c-84d9-92ab84529653"],
+Cell[62828, 1346, 271, 6, 22, "Print",ExpressionUUID->"d4efabe8-9104-2d4d-94a1-b0452b27951e"],
+Cell[63102, 1354, 297, 6, 22, "Print",ExpressionUUID->"b85ba145-3d1c-3049-bd2c-ab12eeef64ea"],
+Cell[63402, 1362, 453, 9, 22, "Print",ExpressionUUID->"7aaec275-7be7-a243-a1fd-7d3f2c8bd6f2"],
+Cell[63858, 1373, 295, 6, 22, "Print",ExpressionUUID->"de014d61-b2fe-354f-a6cf-bdf9c19b812f"],
+Cell[64156, 1381, 295, 6, 22, "Print",ExpressionUUID->"05b356b8-fca3-614a-a467-2cfbb6013024"],
+Cell[64454, 1389, 300, 7, 22, "Print",ExpressionUUID->"7589475c-9cda-3c44-9feb-b243c3b658a8"]
+}, Open  ]]
+}, Open  ]],
+Cell[64781, 1400, 154, 3, 28, "Input",ExpressionUUID->"400c0c0c-b7ae-6c40-be2f-7841576d39c9"],
+Cell[CellGroupData[{
+Cell[64960, 1407, 207, 4, 28, "Input",ExpressionUUID->"125ce385-dd7b-8841-bf8c-7f165f80a5ec"],
+Cell[65170, 1413, 244, 5, 22, "Print",ExpressionUUID->"1766bf2f-aa63-aa41-80a6-ec599ae8d6da"]
+}, Open  ]],
+Cell[65429, 1421, 179, 3, 28, "Input",ExpressionUUID->"cd981895-273f-984f-b915-a6541f9030a9"],
+Cell[65611, 1426, 163, 2, 28, "Input",ExpressionUUID->"ca218f66-6fa7-854e-a31e-e1be249c94d0"],
+Cell[CellGroupData[{
+Cell[65799, 1432, 14956, 365, 1378, "Input",ExpressionUUID->"dcd3aab6-6186-b14f-98e9-2e4bf91072e7"],
+Cell[80758, 1799, 280, 5, 22, "Print",ExpressionUUID->"c7a5a26d-e0d2-344d-88d4-c496b918728e"],
+Cell[81041, 1806, 1912, 55, 124, "Output",ExpressionUUID->"129c06c4-4c62-184f-a82f-e995405bf828"]
+}, Open  ]],
+Cell[82968, 1864, 173, 2, 28, "Input",ExpressionUUID->"ca95fbc1-3e96-fb48-8c81-fe2b9ebff584"],
+Cell[83144, 1868, 200, 3, 28, "Input",ExpressionUUID->"f17205b5-a5f5-ec4d-ae1c-f6c7ebd40970"],
+Cell[83347, 1873, 156, 3, 28, "Input",ExpressionUUID->"1d694a23-ba0d-7f46-8be0-967ee8d8457b"],
+Cell[83506, 1878, 144, 2, 28, "Input",ExpressionUUID->"3fa9dd0f-a628-5c46-920d-22ec4537f1e8"],
+Cell[83653, 1882, 156, 3, 28, "Input",ExpressionUUID->"d19fd39c-80c3-4a4a-951f-6d462b27f4ee"]
+}
+]
+*)
 
